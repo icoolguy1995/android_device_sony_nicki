@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Inherit CM common GSM stuff.
-$(call inherit-product, vendor/crom/config/gsm.mk)
+$(call inherit-product, vendor/crom/config/common_gsm.mk)
 
 # Enhanced NFC
 $(call inherit-product, vendor/crom/config/nfc_enhanced.mk)
