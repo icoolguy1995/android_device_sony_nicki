@@ -100,7 +100,7 @@ BOARD_HAS_NO_SELECT_BUTTON := true
 TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
 BOARD_CUSTOM_BOOTIMG_MK := device/sony/nicki/custombootimg.mk
 BOARD_CUSTOM_RECOVERY_KEYMAPPING := ../../device/sony/nicki/recovery/recovery_keys.c
-BOARD_CUSTOM_GRAPHICS := ../../../device/sony/nicki/recovery/graphics.c
+
 
 BOARD_USES_QC_TIME_SERVICES := true
 
@@ -135,3 +135,19 @@ BOARD_SEPOLICY_UNION += \
     system.te \
     ueventd.te \
     wpa_supplicant.te
+    
+# TWRP
+RECOVERY_SDCARD_ON_DATA := true
+
+TW_EXTERNAL_STORAGE_PATH := "/external_sd"
+TW_EXTERNAL_STORAGE_MOUNT_POINT := "external_sd"
+
+TW_HAS_NO_RECOVERY_PARTITION := true
+TW_INCLUDE_JB_CRYPTO := true
+
+TW_BRIGHTNESS_PATH := "/sys/class/leds/lcd-backlight/brightness"
+TW_MAX_BRIGHTNESS := 255
+
+BOARD_UMS_LUNFILE := "/sys/class/android_usb/f_mass_storage/lun/file"
+DEVICE_RESOLUTION := 480x854
+TW_BOARD_CUSTOM_GRAPHICS := ../../../device/sony/nicki/recovery/twrp_graphics.c
