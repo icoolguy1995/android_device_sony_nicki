@@ -55,12 +55,6 @@
 
 // #define PRINT_SCREENINFO 1 // Enables printing of screen info to log
 
-/*
- * For this device, the framebuffer start needs to be aligned to a 4096-byte
- * boundary.
- */
-#define FB_MEM_ALIGN 0x1000
-
 typedef struct {
     GGLSurface texture;
     unsigned offset[97];
@@ -85,21 +79,21 @@ static struct fb_fix_screeninfo fi;
 #ifdef PRINT_SCREENINFO
 static void print_fb_var_screeninfo()
 {
-	printf("vi.xres: %d\n", vi.xres);
-	printf("vi.yres: %d\n", vi.yres);
-	printf("vi.xres_virtual: %d\n", vi.xres_virtual);
-	printf("vi.yres_virtual: %d\n", vi.yres_virtual);
-	printf("vi.xoffset: %d\n", vi.xoffset);
-	printf("vi.yoffset: %d\n", vi.yoffset);
-	printf("vi.bits_per_pixel: %d\n", vi.bits_per_pixel);
-	printf("vi.grayscale: %d\n", vi.grayscale);
+	LOGI("vi.xres: %d\n", vi.xres);
+	LOGI("vi.yres: %d\n", vi.yres);
+	LOGI("vi.xres_virtual: %d\n", vi.xres_virtual);
+	LOGI("vi.yres_virtual: %d\n", vi.yres_virtual);
+	LOGI("vi.xoffset: %d\n", vi.xoffset);
+	LOGI("vi.yoffset: %d\n", vi.yoffset);
+	LOGI("vi.bits_per_pixel: %d\n", vi.bits_per_pixel);
+	LOGI("vi.grayscale: %d\n", vi.grayscale);
 }
 #endif
 
 static int get_framebuffer(GGLSurface *fb)
 {
     int fd;
-    void *bits;
+    void *bits, *vi2;
 
     fd = open("/dev/graphics/fb0", O_RDWR);
     if (fd < 0) {
@@ -107,12 +101,16 @@ static int get_framebuffer(GGLSurface *fb)
         return -1;
     }
 
-    if (ioctl(fd, FBIOGET_VSCREENINFO, &vi) < 0) {
+	vi2 = malloc(sizeof(vi) + sizeof(__u32));
+
+    if (ioctl(fd, FBIOGET_VSCREENINFO, vi2) < 0) {
         perror("failed to get fb0 info");
         close(fd);
+		free(vi2);
         return -1;
     }
-
+	memcpy((void*) &vi, vi2, sizeof(vi));
+	free(vi2);
     fprintf(stderr, "Pixel format: %dx%d @ %dbpp\n", vi.xres, vi.yres, vi.bits_per_pixel);
 
     vi.bits_per_pixel = PIXEL_SIZE * 8;
@@ -197,7 +195,7 @@ static int get_framebuffer(GGLSurface *fb)
     fb->width = vi.xres;
     fb->height = vi.yres;
 #ifdef BOARD_HAS_JANKY_BACKBUFFER
-    printf("setting JANKY BACKBUFFER\n");
+    LOGI("setting JANKY BACKBUFFER\n");
     fb->stride = fi.line_length/2;
 #else
     fb->stride = vi.xres_virtual;
@@ -206,16 +204,10 @@ static int get_framebuffer(GGLSurface *fb)
     fb->format = PIXEL_FORMAT;
     memset(fb->data, 0, vi.yres * fb->stride * PIXEL_SIZE);
 
-    /* Make sure the framebuffer is aligned to the specific boundary */
-    unsigned fb_size = vi.yres * fb->stride * PIXEL_SIZE;
-    if (fb_size % FB_MEM_ALIGN != 0) {
-        fb_size += FB_MEM_ALIGN - fb_size % FB_MEM_ALIGN;
-    }
-
     fb++;
 
     /* check if we can use double buffering */
-    if (fb_size * 2 > fi.smem_len)
+    if (vi.yres * fi.line_length * 2 > fi.smem_len)
         return fd;
 
     double_buffering = 1;
@@ -225,13 +217,13 @@ static int get_framebuffer(GGLSurface *fb)
     fb->height = vi.yres;
 #ifdef BOARD_HAS_JANKY_BACKBUFFER
     fb->stride = fi.line_length/2;
-    fb->data = (void*) (((unsigned) bits) + fb_size);
+    fb->data = (void*) (((unsigned) bits) + vi.yres * fi.line_length);
 #else
     fb->stride = vi.xres_virtual;
-    fb->data = (void*) (((unsigned) bits) + fb_size);
+    fb->data = (void*) (((unsigned) bits) + vi.yres * fb->stride * PIXEL_SIZE);
 #endif
     fb->format = PIXEL_FORMAT;
-    memset(fb->data, 0, fb_size);
+    memset(fb->data, 0, vi.yres * fb->stride * PIXEL_SIZE);
 
 #ifdef PRINT_SCREENINFO
 	print_fb_var_screeninfo();
@@ -271,14 +263,10 @@ void gr_flip(void)
 #ifdef BOARD_HAS_FLIPPED_SCREEN
     /* flip buffer 180 degrees for devices with physicaly inverted screens */
     unsigned int i;
-    unsigned int j;
-    uint8_t tmp;
-    for (i = 0; i < ((vi.xres_virtual * vi.yres)/2); i++) {
-	for (j = 0; j < PIXEL_SIZE; j++) {
-		tmp = gr_mem_surface.data[i * PIXEL_SIZE + j];
-		gr_mem_surface.data[i * PIXEL_SIZE + j] = gr_mem_surface.data[(vi.xres_virtual * vi.yres * PIXEL_SIZE) - ((i+1) * PIXEL_SIZE) + j];
-		gr_mem_surface.data[(vi.xres_virtual * vi.yres * PIXEL_SIZE) - ((i+1) * PIXEL_SIZE) + j] = tmp;
-	}
+    for (i = 1; i < (vi.xres * vi.yres); i++) {
+        unsigned short tmp = gr_mem_surface.data[i];
+        gr_mem_surface.data[i] = gr_mem_surface.data[(vi.xres * vi.yres * 2) - i];
+        gr_mem_surface.data[(vi.xres * vi.yres * 2) - i] = tmp;
     }
 #endif
 
