@@ -94,7 +94,7 @@ BOARD_HAVE_BLUETOOTH_QCOM := true
 BLUETOOTH_HCI_USE_MCT := true
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/sony/nicki/bluetooth
 
-TARGET_RECOVERY_FSTAB = device/sony/nicki/recovery/twrp.fstab
+TARGET_RECOVERY_FSTAB = device/sony/nicki/rootdir/root/fstab.qcom
 
 BOARD_HAS_NO_SELECT_BUTTON := true
 TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
