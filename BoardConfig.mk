@@ -112,6 +112,7 @@ BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/sony/nicki/bluetooth
 
 # Recovery
 TARGET_RECOVERY_FSTAB = device/sony/nicki/rootdir/root/fstab.qcom
+TARGET_DEVICE_RESOLUTION := 480x850
 BOARD_HAS_NO_SELECT_BUTTON := true
 TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
 BOARD_CUSTOM_BOOTIMG_MK := device/sony/nicki/custombootimg.mk
